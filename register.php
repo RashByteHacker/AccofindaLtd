@@ -87,21 +87,44 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt->bind_param("ssssssi", $full_name, $email, $phone, $hashed_password, $role, $token, $token_expires);
 
     if ($stmt->execute()) {
-        // ✅ Build dynamic verification link
+        // ✅ Build verification link (ensure correct path)
         $baseURL = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") .
-            "://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
-        $verify_link = rtrim($baseURL, '/') . "/verifyEmail.php?token=" . urlencode($token);
+            "://" . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/');
+        $verifyLink = $baseURL . "/verifyEmail.php?email=" . urlencode($email) . "&token=" . urlencode($token);
 
+        // ✅ Styled HTML email body
         $subject = "Verify Your Accofinda Account";
         $message_body = "
-        Hello $full_name,<br><br>
-        Thank you for registering on <b>Accofinda</b>!<br><br>
-        Please verify your email address by clicking the link below:<br><br>
-        <a href='$verify_link' style='background:#007bff;color:#fff;padding:10px 20px;text-decoration:none;border-radius:5px;'>Verify My Email</a><br><br>
-        This link will expire in 24 hours.<br><br>
-        If you did not sign up, please ignore this email.<br><br>
-        Regards,<br><b>Accofinda Team</b>
-        ";
+<html>
+<body style='font-family: Arial, sans-serif; background-color:#f4f4f4; margin:0; padding:0;'>
+    <table width='100%' cellpadding='0' cellspacing='0' style='max-width:600px; margin:40px auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1);'>
+        <tr>
+            <td style='background:#364458; padding:20px; color:white; text-align:left;'>
+                <h2 style='margin:0; font-weight:600; font-size:1.5rem;'>Accofinda</h2>
+                <p style='margin:5px 0 0; font-size:0.95rem; opacity:0.85;'>Verify Your Account</p>
+            </td>
+        </tr>
+        <tr>
+            <td style='padding:30px; text-align:left; color:#333;'>
+                <p style='font-size:1rem;'>Hello <strong>$full_name</strong>,</p>
+                <p style='font-size:0.95rem; color:#555; margin:15px 0;'>
+                    Please click the button below to verify your email address and activate your account:
+                </p>
+                <a href='$verifyLink' style='display:inline-block; padding:12px 25px; background:#0d6efd; color:#fff; text-decoration:none; border-radius:6px; font-weight:500; margin:15px 0;'>Verify Email</a>
+                <p style='font-size:0.85rem; color:#777; margin:20px 0 5px;'>If the button doesn't work, copy and paste this link into your browser:</p>
+                <p style='word-break:break-word; color:#0d6efd; font-size:0.9rem;'><a href='$verifyLink' style='color:#0d6efd; text-decoration:none;'>$verifyLink</a></p>
+                <p style='font-size:0.85rem; color:#999; margin-top:25px;'>This link will expire in 24 hours for your security.</p>
+            </td>
+        </tr>
+        <tr>
+            <td style='background:#f4f4f4; padding:15px; text-align:left; font-size:0.8rem; color:#555;'>
+                &copy; " . date('Y') . " Accofinda. All rights reserved.
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+
 
         // ✅ Send verification email
         $mail = new PHPMailer(true);
@@ -110,13 +133,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $mail->Host       = 'smtp.hostinger.com';
             $mail->SMTPAuth   = true;
             $mail->Username   = 'support@accofinda.com';
-            $mail->Password   = '#$RashidQN13$#';
+            $mail->Password   = 'AccofindaMail2024!';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port       = 465;
 
-            $mail->setFrom('support@accofinda.com', 'Accofinda');
+            // --- From & Recipient ---
+            $mail->setFrom('support@accofinda.com', 'Accofinda Support');
             $mail->addAddress($email, $full_name);
             $mail->addReplyTo('support@accofinda.com', 'Support');
+
+            // --- Email content ---
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body    = $message_body;
